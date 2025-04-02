@@ -21,7 +21,7 @@ services:
       - 8080:8888
       - 8081:6006
     volumes:
-      - ~/data:/home/jovyan
+      - ~/data/gpu-jupyter:/home/jovyan
     environment:
       - GRANT_SUDO=yes
       - JUPYTER_ENABLE_LAB=yes
