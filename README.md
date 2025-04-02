@@ -1,2 +1,3 @@
-# lab
-Resources for running ML experiments.
+# Lab
+
+My local setup for software development and running ML experiments.

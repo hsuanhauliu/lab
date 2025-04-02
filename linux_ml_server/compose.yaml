@@ -1,0 +1,30 @@
+name: ml-experiment-environment
+services:
+  # Jupyter Notebook with most useful libraries installed.
+  # Doc: https://github.com/iot-salzburg/gpu-jupyter
+  #
+  # Ports mapping:
+  # - 8080: Jupyter notebook UI
+  # - 8081: Tensorboard UI
+  gpu-jupyter:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    stdin_open: true
+    tty: true
+    ports:
+      - 8080:8888
+      - 8081:6006
+    volumes:
+      - ~/data:/home/jovyan
+    environment:
+      - GRANT_SUDO=yes
+      - JUPYTER_ENABLE_LAB=yes
+    user: root
+    container_name: jupyter_env
+    image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04
