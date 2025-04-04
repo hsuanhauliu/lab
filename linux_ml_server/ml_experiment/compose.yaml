@@ -22,13 +22,12 @@ services:
     volumes:
       - ~/data/ml_notebook:/home/jovyan
     environment:
-      - GRANT_SUDO: "yes"
-      - JUPYTER_ENABLE_LAB: "yes"
-      - NB_UID: ${JUPYTER_UID:-1000}
-      - NB_GID: ${JUPYTER_GID:-1000}
-      - JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+      GRANT_SUDO: "yes"
+      JUPYTER_ENABLE_LAB: "yes"
+      NB_UID: ${JUPYTER_UID:-1000}
+      NB_GID: ${JUPYTER_GID:-1000}
     # for sudo permissions
     user: root
     restart: always
     image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04
-    command: tensorboard --logdir=logs --host 0.0.0.0 --port 6006
+
