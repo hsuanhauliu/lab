@@ -1,4 +1,4 @@
-name: ml-experiment-environment
+name: ml-experiment-stack
 services:
   # Jupyter Notebook with most useful libraries installed.
   # Doc: https://github.com/iot-salzburg/gpu-jupyter
@@ -21,10 +21,11 @@ services:
       - 8080:8888
       - 8081:6006
     volumes:
-      - ~/data/gpu-jupyter:/home/jovyan
+      - ~/data/ml_notebook:/home/jovyan
     environment:
       - GRANT_SUDO=yes
       - JUPYTER_ENABLE_LAB=yes
     user: root
     container_name: jupyter_env
     image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04
+    command: tensorboard --logdir=logs --host 0.0.0.0 --port 6006
