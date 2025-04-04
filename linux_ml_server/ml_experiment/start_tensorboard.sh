@@ -1,1 +1,2 @@
-docker exec -it jupyter_env tensorboard --logdir mylogdir --bind_all
+# Jupyter notebook container needs to be running first.
+docker exec -d -it jupyter_env tensorboard --logdir logs --bind_all
