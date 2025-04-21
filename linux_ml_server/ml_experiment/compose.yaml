@@ -8,6 +8,7 @@ services:
   # - 8081: Tensorboard UI
   gpu-jupyter:
     container_name: jupyter_env
+    build: .
     deploy:
       resources:
         reservations:
@@ -30,5 +31,4 @@ services:
     # inside and outside of Docker.
     user: 1000:1000
     restart: always
-    image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04
 
