@@ -8,6 +8,7 @@ services:
   # - 8081: Tensorboard UI
   gpu-jupyter:
     container_name: jupyter_env
+    build: jupyter_notebook/
     deploy:
       resources:
         reservations:
@@ -22,11 +23,30 @@ services:
     volumes:
       - ~/data/ml_notebook:/home/jovyan
     environment:
-      GRANT_SUDO: "yes"
       JUPYTER_ENABLE_LAB: "yes"
-      NB_UID: ${JUPYTER_UID:-1000}
-      NB_GID: ${JUPYTER_GID:-1000}
-    # for sudo permissions
-    user: root
+      NB_UID: 1000:1000
+      NB_GID: 1000:1000
+    # Set user and group to 1000 so it's the same as host.
+    # This is needed so that files created in docker will be owned by the same user
+    # inside and outside of Docker.
+    user: 1000:1000
     restart: always
-    image: cschranz/gpu-jupyter:v1.5_cuda-11.6_ubuntu-20.04
+  gpu-comfyui:
+    container_name: comfyui
+    stdin_open: true
+    tty: true
+    restart: always
+    ports:
+      - 8082:8188
+    volumes:
+      - ~/data/comfyui:/root
+    image: yanwk/comfyui-boot:cu124-slim
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+
