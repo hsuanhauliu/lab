@@ -10,8 +10,7 @@ Tear down the stack with:
 
 ```docker compose down```
 
-
 Files in this directory:
+
 - Dockerfile: add some additional packages on top of the gpu-jupyter Dockerfile.
 - compose.yaml: Docker compose file to bring up all services.
-
