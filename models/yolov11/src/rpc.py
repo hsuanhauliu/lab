@@ -1,36 +1,20 @@
-# Logic for RPC request and response data.
+# Definitions of RPC request and response data.
 
-import io
-import base64
-
-import cv2
-from pydantic import BaseModel, field_validator
-from typing import List, Union
-import numpy as np
+from pydantic import BaseModel
+from typing import List
 
 
 # Inference Request format.
 class InferenceRequest(BaseModel):
-    image: np.ndarray
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @field_validator("image", mode="before")
-    @classmethod
-    def parse_coordinates(cls, v: str) -> np.ndarray:
-        """
-        Custom validator to parse base64 encoded image to Numpy array.
-        """
-        im_bytes = io.BytesIO(base64.b64decode(v))
-        return cv2.imread(im_bytes)
+    base64_img: str  # base64 encoded image
 
 
 # Inference Response format.
 class InferenceResponse(BaseModel):
-    bounding_boxes: List[np.ndarray]
+    """
+    Inference response containing the results.
+
+    The order of both lists align with each other.
+    """
+    bounding_boxes: List[dict[str, int]]
     classes: List[str]
-
-    class Config:
-        arbitrary_types_allowed = True
-

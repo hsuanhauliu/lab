@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Detection</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Use Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for the canvas to overlay the image */
+        #image-container {
+            position: relative;
+        }
+        #bbox-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none; /* Allows clicks to pass through to the image if needed */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-900">Object Detection</h1>
+
+        <!-- Image Upload Section -->
+        <div class="mb-6">
+            <label for="image-upload" class="block text-sm font-medium text-gray-700 mb-2">Upload an Image:</label>
+            <input type="file" id="image-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+        </div>
+
+        <!-- Image Display and Canvas Overlay -->
+        <div id="image-container" class="mb-6 border-2 border-dashed border-gray-300 rounded-lg min-h-[200px] flex items-center justify-center bg-gray-50">
+            <img id="uploaded-image" src="" alt="Your uploaded image will appear here." class="max-w-full max-h-[60vh] rounded-lg hidden">
+            <canvas id="bbox-canvas"></canvas>
+            <p id="placeholder-text" class="text-gray-500">Please select an image to get started</p>
+        </div>
+        
+        <!-- Action Button -->
+        <div class="text-center">
+            <button id="detect-button" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                Detect Objects
+            </button>
+        </div>
+
+        <!-- Status/Error Message Area -->
+        <div id="status-message" class="mt-4 text-center text-sm font-medium"></div>
+    </div>
+
+    <script>
+        // DOM Element References
+        const imageUpload = document.getElementById('image-upload');
+        const uploadedImage = document.getElementById('uploaded-image');
+        const bboxCanvas = document.getElementById('bbox-canvas');
+        const detectButton = document.getElementById('detect-button');
+        const statusMessage = document.getElementById('status-message');
+        const placeholderText = document.getElementById('placeholder-text');
+        
+        // Backend Server URL
+        const backendUrl = 'http://localhost:8000/predict';
+
+        let base64ImageString = '';
+
+        // --- Event Listeners ---
+
+        /**
+         * Handles the file selection event.
+         * Reads the selected image, displays it, and enables the detection button.
+         */
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            // Use FileReader to read the file as a Data URL
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // Display the image
+                uploadedImage.src = e.target.result;
+                uploadedImage.classList.remove('hidden');
+                placeholderText.classList.add('hidden');
+
+                // The result includes the Base64 prefix, which we need to remove for the API
+                base64ImageString = e.target.result.split(',')[1];
+                
+                // Enable the button now that an image is loaded
+                detectButton.disabled = false;
+                statusMessage.textContent = 'Image loaded. Ready to detect objects.';
+                
+                // Clear any previous drawings on the canvas
+                clearCanvas();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        /**
+         * Handles the click event for the 'Detect Objects' button.
+         * Sends the image data to the backend and processes the response.
+         */
+        detectButton.addEventListener('click', async () => {
+            if (!base64ImageString) {
+                setStatus('Please upload an image first.', 'error');
+                return;
+            }
+
+            // Disable button and show loading state
+            detectButton.disabled = true;
+            setStatus('Detecting objects...', 'loading');
+            clearCanvas();
+
+            try {
+                // Make the API call to the backend
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        base64_img: base64ImageString
+                    }),
+                });
+
+                if (!response.ok) {
+                    // Handle HTTP errors (e.g., 404, 500)
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Check for successful response structure
+                if (data.bounding_boxes && data.classes) {
+                    setStatus(`Success! Found ${data.bounding_boxes.length} objects.`, 'success');
+                    // Draw the bounding boxes on the image
+                    drawBoundingBoxes(data.bounding_boxes, data.classes);
+                } else {
+                    throw new Error('Invalid response format from server.');
+                }
+
+            } catch (error) {
+                console.error('Error during object detection:', error);
+                setStatus(`Error: ${error.message}. Please check the console and ensure the backend server is running.`, 'error');
+            } finally {
+                // Re-enable the button
+                detectButton.disabled = false;
+            }
+        });
+
+        // --- Helper Functions ---
+
+        /**
+         * Draws the bounding boxes and class labels on the canvas.
+         * @param {Array<Object>} boxes - An array of bounding box objects.
+         * @param {Array<string>} classes - An array of class names.
+         */
+        function drawBoundingBoxes(boxes, classes) {
+            const ctx = bboxCanvas.getContext('2d');
+            
+            // Match canvas dimensions to the displayed image dimensions
+            bboxCanvas.width = uploadedImage.clientWidth;
+            bboxCanvas.height = uploadedImage.clientHeight;
+
+            // Calculate scaling factors
+            const scaleX = uploadedImage.clientWidth / uploadedImage.naturalWidth;
+            const scaleY = uploadedImage.clientHeight / uploadedImage.naturalHeight;
+
+            // Define a color palette for the boxes
+            const colors = ['#FF3838', '#FF9D42', '#42A5F5', '#66BB6A', '#AB47BC', '#FFD700', '#00FFFF'];
+
+            boxes.forEach((box, i) => {
+                const color = colors[i % colors.length];
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.fillStyle = color;
+                ctx.font = '16px Inter';
+
+                // Scale coordinates from original image size to displayed image size
+                const x = box.left * scaleX;
+                const y = box.top * scaleY;
+                const width = (box.right - box.left) * scaleX;
+                const height = (box.bottom - box.top) * scaleY;
+
+                // Draw the bounding box
+                ctx.strokeRect(x, y, width, height);
+
+                // Draw the label background
+                const className = classes[i] || 'unknown';
+                const textWidth = ctx.measureText(className).width;
+                ctx.fillRect(x, y, textWidth + 8, 20);
+
+                // Draw the label text
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText(className, x + 4, y + 15);
+            });
+        }
+        
+        /**
+         * Clears the canvas of all drawings.
+         */
+        function clearCanvas() {
+            const ctx = bboxCanvas.getContext('2d');
+            ctx.clearRect(0, 0, bboxCanvas.width, bboxCanvas.height);
+        }
+
+        /**
+         * Sets the status message with appropriate styling.
+         * @param {string} message - The message to display.
+         * @param {'loading'|'success'|'error'|'info'} type - The type of message.
+         */
+        function setStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('text-blue-500', 'text-green-600', 'text-red-600');
+            switch (type) {
+                case 'loading':
+                    statusMessage.classList.add('text-blue-500');
+                    break;
+                case 'success':
+                    statusMessage.classList.add('text-green-600');
+                    break;
+                case 'error':
+                    statusMessage.classList.add('text-red-600');
+                    break;
+                default:
+                     statusMessage.classList.add('text-gray-700');
+            }
+        }
+        
+        // Redraw boxes on window resize to maintain alignment
+        window.addEventListener('resize', () => {
+            // This is a simple implementation. For production, you might want to debounce this
+            // and re-run the detection or at least re-run the drawing logic if data is present.
+            if (uploadedImage.src && !detectButton.disabled) {
+                 // A simple approach is to just clear the canvas and ask user to re-detect
+                 clearCanvas();
+                 setStatus('Window resized. Please detect objects again for accurate boxes.', 'info');
+            }
+        });
+
+    </script>
+</body>
+</html>
