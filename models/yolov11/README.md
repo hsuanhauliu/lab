@@ -19,7 +19,8 @@ Use the provided script to download YOLOv11. Modify the URL in the script if you
 Command to run the image:
 
 ```bash
-docker run -v ./data:/app/data yolov11
+# service will be running on http://localhost:8080
+docker run --rm -v ./data:/app/data --name yolov11 -p 8080:5000 yolov11
 ```
 
 ## Dev

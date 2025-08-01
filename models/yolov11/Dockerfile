@@ -34,4 +34,4 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY ./src .
 
 # --- Entrypoint ---
-CMD ["uvicorn", "app", "--reload"]
+CMD ["uvicorn", "app:app", "--host=0.0.0.0", "--port=5000"]
