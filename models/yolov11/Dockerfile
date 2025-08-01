@@ -18,12 +18,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # --- Install Dependencies ---
+RUN apt-get update && apt-get install git ffmpeg libsm6 libxext6  -y
+
 # --no-cache-dir is used to reduce the image size by not storing the cache.
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir opencv-python-headless && \
-    pip install --no-cache-dir ultralytics
+    pip install --no-cache-dir ultralytics && \
+    pip install --no-cache-dir uvicorn && \
+    pip install --no-cache-dir git+https://github.com/hsuanhauliu/fast-serve.git
 
-RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
 # --- Copy Application Code ---
 # Copy the contents of your local 'src' directory into the container's
@@ -31,6 +34,4 @@ RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 COPY ./src .
 
 # --- Entrypoint ---
-# Specifies the command to run when the container starts.
-# This will execute your app.py script.
-CMD ["python", "app.py"]
+CMD ["uvicorn", "app", "--reload"]

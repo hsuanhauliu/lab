@@ -19,7 +19,7 @@ Use the provided script to download YOLOv11. Modify the URL in the script if you
 Command to run the image:
 
 ```bash
-docker run -v ./data:/data yolov11
+docker run -v ./data:/app/data yolov11
 ```
 
 ## Dev
