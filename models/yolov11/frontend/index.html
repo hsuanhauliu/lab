@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Object Detection</title>
+    <title>Object Detection - Full Page</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -11,11 +11,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Use Inter font family */
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Style for the canvas to overlay the image */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* Prevent body from scrolling */
+        }
         #image-container {
             position: relative;
         }
@@ -23,228 +25,569 @@
             position: absolute;
             top: 0;
             left: 0;
-            pointer-events: none; /* Allows clicks to pass through to the image if needed */
+            pointer-events: none;
+        }
+        .highlight-row {
+            background-color: #e0f2fe !important;
+        }
+        .group:hover .tooltip {
+            display: block;
+        }
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+        .transition-transform {
+            transition: transform 0.2s ease-in-out;
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen">
+<body class="bg-gray-100 text-gray-800 h-full">
 
-    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-2xl">
-        <h1 class="text-3xl font-bold text-center mb-6 text-gray-900">Object Detection</h1>
+    <div class="flex flex-col lg:flex-row h-full w-full">
 
-        <!-- Image Upload Section -->
-        <div class="mb-6">
-            <label for="image-upload" class="block text-sm font-medium text-gray-700 mb-2">Upload an Image:</label>
-            <input type="file" id="image-upload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+        <!-- Left Column: Image and Controls -->
+        <div class="w-full lg:w-3/5 flex flex-col p-6 bg-white">
+            
+            <!-- Controls Wrapper -->
+            <div class="flex-shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <label for="image-upload" class="inline-block bg-white py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">
+                            <span>Upload Image</span>
+                        </label>
+                        <input type="file" id="image-upload" accept="image/*" class="hidden">
+                        <span id="file-name" class="ml-3 text-sm text-gray-500"></span>
+                    </div>
+                    <div>
+                        <button id="detect-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            Detect Objects
+                        </button>
+                    </div>
+                </div>
+
+                <div id="toolbar" class="mb-2 p-2 bg-gray-50 rounded-lg flex items-center gap-2">
+                    <div class="relative group flex justify-center">
+                        <button id="show-results-btn" class="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                        <span id="show-results-tooltip" class="tooltip absolute bottom-full mb-2 w-max hidden bg-gray-800 text-white text-xs rounded py-1 px-2">Hide Boxes</span>
+                    </div>
+                    <div class="relative group flex justify-center">
+                        <button id="show-labels-btn" class="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </button>
+                        <span id="show-labels-tooltip" class="tooltip absolute bottom-full mb-2 w-max hidden bg-gray-800 text-white text-xs rounded py-1 px-2">Hide Labels</span>
+                    </div>
+                    <div class="relative group flex justify-center">
+                        <button id="download-btn" class="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        </button>
+                        <span id="download-tooltip" class="tooltip absolute bottom-full mb-2 w-max hidden bg-gray-800 text-white text-xs rounded py-1 px-2">Download</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Display & Progress -->
+            <div class="flex-grow relative flex flex-col justify-center items-center min-h-0 my-4">
+                <div id="image-container" class="relative w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                    <img id="uploaded-image" src="" alt="Uploaded image" class="max-w-full max-h-full object-contain hidden">
+                    <canvas id="bbox-canvas" class="hidden"></canvas>
+                    <p id="placeholder-text" class="text-gray-500">Please select an image to get started</p>
+                    
+                    <!-- Image Info Icon and Popover -->
+                    <div id="image-info-container" class="absolute top-2 right-2 hidden">
+                        <button id="info-icon" class="p-1.5 bg-black bg-opacity-50 rounded-full hover:bg-opacity-75 focus:outline-none">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                        <div id="info-popover" class="absolute top-full right-0 mt-2 w-64 bg-white p-3 rounded-lg shadow-xl text-sm text-gray-700 hidden z-10">
+                            <p class="font-semibold mb-2">Image Information</p>
+                            <p><strong>File Name:</strong> <span id="info-file-name"></span></p>
+                            <p><strong>File Size:</strong> <span id="info-file-size"></span></p>
+                            <p><strong>Dimensions:</strong> <span id="info-dimensions"></span></p>
+                            <p><strong>Type:</strong> <span id="info-type"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div id="progress-container" class="w-full mt-2 h-2 bg-gray-200 rounded-full overflow-hidden hidden">
+                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full" style="width: 0%; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Image Display and Canvas Overlay -->
-        <div id="image-container" class="mb-6 border-2 border-dashed border-gray-300 rounded-lg min-h-[200px] flex items-center justify-center bg-gray-50">
-            <img id="uploaded-image" src="" alt="Your uploaded image will appear here." class="max-w-full max-h-[60vh] rounded-lg hidden">
-            <canvas id="bbox-canvas"></canvas>
-            <p id="placeholder-text" class="text-gray-500">Please select an image to get started</p>
-        </div>
-        
-        <!-- Action Button -->
-        <div class="text-center">
-            <button id="detect-button" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                Detect Objects
-            </button>
-        </div>
+        <!-- Right Column: Results -->
+        <div id="results-column" class="w-full lg:w-2/5 flex flex-col p-6 space-y-4 bg-gray-100 border-l border-gray-200 overflow-y-auto">
+            <div class="bg-white rounded-lg shadow-sm">
+                <button id="toggle-model-summary" class="w-full flex justify-between items-center p-4">
+                    <h3 class="font-bold text-lg">Model Summary</h3>
+                    <svg class="w-5 h-5 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="model-summary-content" class="p-4 pt-0 hidden">
+                   <p class="text-sm text-gray-600">Model details will be displayed here.</p>
+                </div>
+            </div>
 
-        <!-- Status/Error Message Area -->
-        <div id="status-message" class="mt-4 text-center text-sm font-medium"></div>
+            <div class="bg-white rounded-lg shadow-sm">
+                 <button id="toggle-detection-summary" class="w-full flex justify-between items-center p-4">
+                    <h3 class="font-bold text-lg">Detection Summary</h3>
+                    <svg class="w-5 h-5 text-gray-500 transition-transform rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="summary-content" class="p-4 pt-0"></div>
+            </div>
+
+            <div class="bg-white border rounded-lg shadow-sm flex flex-col flex-grow min-h-0">
+                 <div class="p-4 flex-shrink-0 border-b">
+                    <div class="flex justify-between items-center">
+                         <h3 class="font-bold text-lg">Detected Objects</h3>
+                         <button id="toggle-results-table" class="p-1">
+                             <svg class="w-5 h-5 text-gray-500 transition-transform rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                     <div id="filter-container" class="mt-2">
+                        <label for="class-filter" class="text-sm font-medium text-gray-700 mr-2">Filter by class:</label>
+                        <select id="class-filter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"></select>
+                    </div>
+                 </div>
+                <div id="results-table-container" class="overflow-y-auto flex-grow">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">#</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // DOM Element References
+        // --- DOM Element References ---
         const imageUpload = document.getElementById('image-upload');
+        const fileNameSpan = document.getElementById('file-name');
         const uploadedImage = document.getElementById('uploaded-image');
+        const imageContainer = document.getElementById('image-container');
         const bboxCanvas = document.getElementById('bbox-canvas');
         const detectButton = document.getElementById('detect-button');
-        const statusMessage = document.getElementById('status-message');
         const placeholderText = document.getElementById('placeholder-text');
+        const toolbar = document.getElementById('toolbar');
+        const showResultsBtn = document.getElementById('show-results-btn');
+        const showLabelsBtn = document.getElementById('show-labels-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const showResultsTooltip = document.getElementById('show-results-tooltip');
+        const showLabelsTooltip = document.getElementById('show-labels-tooltip');
+        const summaryContent = document.getElementById('summary-content');
+        const resultsTableBody = document.getElementById('results-table-body');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
         
-        // Backend Server URL
-        const backendUrl = 'http://localhost:8000/predict';
+        // Image Info Elements
+        const imageInfoContainer = document.getElementById('image-info-container');
+        const infoIcon = document.getElementById('info-icon');
+        const infoPopover = document.getElementById('info-popover');
+        const infoFileName = document.getElementById('info-file-name');
+        const infoFileSize = document.getElementById('info-file-size');
+        const infoDimensions = document.getElementById('info-dimensions');
+        const infoType = document.getElementById('info-type');
 
+        // Collapsible section elements
+        const toggleModelSummaryBtn = document.getElementById('toggle-model-summary');
+        const modelSummaryContent = document.getElementById('model-summary-content');
+        const toggleDetectionSummaryBtn = document.getElementById('toggle-detection-summary');
+        const toggleResultsTableBtn = document.getElementById('toggle-results-table');
+        const resultsTableContainer = document.getElementById('results-table-container');
+        const filterContainer = document.getElementById('filter-container');
+        const classFilter = document.getElementById('class-filter');
+
+        // --- State Management ---
+        const backendUrl = 'http://localhost:8000/predict';
         let base64ImageString = '';
+        let detectionResults = { boxes: [], classes: [] };
+        let imageMetadata = {};
+        let uiState = {
+            showBoxes: true,
+            showLabels: true,
+            highlightedIndex: -1,
+            filterClass: 'all'
+        };
 
         // --- Event Listeners ---
-
-        /**
-         * Handles the file selection event.
-         * Reads the selected image, displays it, and enables the detection button.
-         */
         imageUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) {
+                fileNameSpan.textContent = '';
                 return;
-            }
+            };
 
-            // Use FileReader to read the file as a Data URL
+            imageMetadata = {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+            };
+
+            fileNameSpan.textContent = file.name;
             const reader = new FileReader();
             reader.onload = (e) => {
-                // Display the image
+                resetUI(); 
                 uploadedImage.src = e.target.result;
-                uploadedImage.classList.remove('hidden');
-                placeholderText.classList.add('hidden');
+                // Wait for image to load to get dimensions
+                uploadedImage.onload = () => {
+                    imageMetadata.width = uploadedImage.naturalWidth;
+                    imageMetadata.height = uploadedImage.naturalHeight;
+                    populateImageInfo();
+                    imageInfoContainer.classList.remove('hidden');
 
-                // The result includes the Base64 prefix, which we need to remove for the API
-                base64ImageString = e.target.result.split(',')[1];
-                
-                // Enable the button now that an image is loaded
-                detectButton.disabled = false;
-                statusMessage.textContent = 'Image loaded. Ready to detect objects.';
-                
-                // Clear any previous drawings on the canvas
-                clearCanvas();
+                    uploadedImage.classList.remove('hidden');
+                    placeholderText.classList.add('hidden');
+                    imageContainer.className = 'relative w-full h-full flex items-center justify-center bg-white rounded-lg overflow-hidden';
+                    bboxCanvas.classList.remove('hidden');
+                    base64ImageString = e.target.result.split(',')[1];
+                    detectButton.disabled = false;
+                    redrawCanvas(); // Initial draw in case of resize before detection
+                };
             };
             reader.readAsDataURL(file);
         });
 
-        /**
-         * Handles the click event for the 'Detect Objects' button.
-         * Sends the image data to the backend and processes the response.
-         */
-        detectButton.addEventListener('click', async () => {
-            if (!base64ImageString) {
-                setStatus('Please upload an image first.', 'error');
-                return;
+        detectButton.addEventListener('click', handleDetection);
+        showResultsBtn.addEventListener('click', toggleResultsVisibility);
+        showLabelsBtn.addEventListener('click', toggleLabelsVisibility);
+        downloadBtn.addEventListener('click', downloadImage);
+        imageContainer.addEventListener('mousemove', handleCanvasMouseMove);
+        imageContainer.addEventListener('mouseleave', () => {
+             if (uiState.highlightedIndex !== -1) {
+                uiState.highlightedIndex = -1;
+                redrawCanvas();
+                clearTableHighlights();
             }
+        });
+        window.addEventListener('resize', () => {
+            if (uploadedImage.src) redrawCanvas();
+        });
 
-            // Disable button and show loading state
+        // Collapsible section listeners
+        [toggleModelSummaryBtn, toggleDetectionSummaryBtn].forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                const icon = button.querySelector('svg');
+                content.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+            });
+        });
+
+        toggleResultsTableBtn.addEventListener('click', () => {
+            const icon = toggleResultsTableBtn.querySelector('svg');
+            resultsTableContainer.classList.toggle('hidden');
+            filterContainer.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        });
+
+
+        // Image Info Popover Listener
+        infoIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            infoPopover.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!infoPopover.classList.contains('hidden') && !infoPopover.contains(e.target) && e.target !== infoIcon) {
+                infoPopover.classList.add('hidden');
+            }
+        });
+        
+        // Class filter listener
+        classFilter.addEventListener('change', (e) => {
+            uiState.filterClass = e.target.value;
+            populateResultsTable();
+            redrawCanvas();
+        });
+
+
+        // --- Core Functions ---
+        async function handleDetection() {
+            if (!base64ImageString) return;
+            
             detectButton.disabled = true;
-            setStatus('Detecting objects...', 'loading');
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            setTimeout(() => { progressBar.style.width = '70%'; }, 100);
+
+            resultsTableBody.innerHTML = '';
+            summaryContent.innerHTML = '';
             clearCanvas();
 
             try {
-                // Make the API call to the backend
                 const response = await fetch(backendUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        base64_img: base64ImageString
-                    }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ base64_img: base64ImageString }),
                 });
 
-                if (!response.ok) {
-                    // Handle HTTP errors (e.g., 404, 500)
-                    throw new Error(`Server responded with status: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+                
                 const data = await response.json();
-
-                // Check for successful response structure
-                if (data.bounding_boxes && data.classes) {
-                    setStatus(`Success! Found ${data.bounding_boxes.length} objects.`, 'success');
-                    // Draw the bounding boxes on the image
-                    drawBoundingBoxes(data.bounding_boxes, data.classes);
-                } else {
-                    throw new Error('Invalid response format from server.');
-                }
+                if (!data.bounding_boxes || !data.classes) throw new Error('Invalid response format from server.');
+                
+                detectionResults = { boxes: data.bounding_boxes, classes: data.classes };
+                
+                uiState.showBoxes = true;
+                uiState.showLabels = true;
+                populateClassFilter();
+                populateResultsTable();
+                updateSummary();
+                redrawCanvas();
 
             } catch (error) {
                 console.error('Error during object detection:', error);
-                setStatus(`Error: ${error.message}. Please check the console and ensure the backend server is running.`, 'error');
             } finally {
-                // Re-enable the button
-                detectButton.disabled = false;
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    detectButton.disabled = false;
+                }, 500);
             }
-        });
+        }
 
-        // --- Helper Functions ---
-
-        /**
-         * Draws the bounding boxes and class labels on the canvas.
-         * @param {Array<Object>} boxes - An array of bounding box objects.
-         * @param {Array<string>} classes - An array of class names.
-         */
-        function drawBoundingBoxes(boxes, classes) {
+        function redrawCanvas() {
+            if (!uploadedImage.src || !uploadedImage.complete || uploadedImage.naturalWidth === 0) return;
             const ctx = bboxCanvas.getContext('2d');
             
-            // Match canvas dimensions to the displayed image dimensions
             bboxCanvas.width = uploadedImage.clientWidth;
             bboxCanvas.height = uploadedImage.clientHeight;
+            ctx.clearRect(0, 0, bboxCanvas.width, bboxCanvas.height);
 
-            // Calculate scaling factors
-            const scaleX = uploadedImage.clientWidth / uploadedImage.naturalWidth;
-            const scaleY = uploadedImage.clientHeight / uploadedImage.naturalHeight;
+            if (!uiState.showBoxes || detectionResults.boxes.length === 0) return;
 
-            // Define a color palette for the boxes
+            const scaleX = bboxCanvas.clientWidth / uploadedImage.naturalWidth;
+            const scaleY = bboxCanvas.clientHeight / uploadedImage.naturalHeight;
             const colors = ['#FF3838', '#FF9D42', '#42A5F5', '#66BB6A', '#AB47BC', '#FFD700', '#00FFFF'];
 
-            boxes.forEach((box, i) => {
+            detectionResults.boxes.forEach((box, i) => {
+                const className = detectionResults.classes[i];
+                // Skip if a filter is active and the class doesn't match
+                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) {
+                    return;
+                }
+
+                const isHighlighted = (i === uiState.highlightedIndex);
                 const color = colors[i % colors.length];
                 ctx.strokeStyle = color;
-                ctx.lineWidth = 3;
-                ctx.fillStyle = color;
-                ctx.font = '16px Inter';
+                ctx.lineWidth = isHighlighted ? 5 : 3;
+                const x = box.left * scaleX;
+                const y = box.top * scaleY;
+                const width = (box.right - box.left) * scaleX;
+                const height = (box.bottom - box.top) * scaleY;
+                ctx.strokeRect(x, y, width, height);
 
-                // Scale coordinates from original image size to displayed image size
+                if (uiState.showLabels) {
+                    const label = className || 'unknown';
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 16px Inter';
+                    const textWidth = ctx.measureText(label).width;
+                    ctx.fillRect(x, y - 20, textWidth + 8, 20);
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillText(label, x + 4, y - 5);
+                }
+            });
+        }
+
+        // --- UI Update Functions ---
+        function populateImageInfo() {
+            infoFileName.textContent = imageMetadata.name;
+            infoFileSize.textContent = `${(imageMetadata.size / 1024).toFixed(2)} KB`;
+            infoDimensions.textContent = `${imageMetadata.width} x ${imageMetadata.height} px`;
+            infoType.textContent = imageMetadata.type;
+        }
+        
+        function populateClassFilter() {
+            classFilter.innerHTML = '<option value="all">All Classes</option>';
+            const uniqueClasses = [...new Set(detectionResults.classes)];
+            uniqueClasses.sort().forEach(className => {
+                const option = document.createElement('option');
+                option.value = className;
+                option.textContent = className;
+                classFilter.appendChild(option);
+            });
+        }
+
+        function populateResultsTable() {
+            resultsTableBody.innerHTML = '';
+            let displayIndex = 1;
+            detectionResults.classes.forEach((className, i) => {
+                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) {
+                    return; // Skip if it doesn't match the filter
+                }
+                const row = document.createElement('tr');
+                row.className = 'cursor-pointer hover:bg-gray-50';
+                row.dataset.index = i; // Use original index for highlighting
+                row.innerHTML = `
+                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${displayIndex++}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${className}</td>
+                `;
+                row.addEventListener('mouseenter', () => handleTableRowHover(i, true));
+                row.addEventListener('mouseleave', () => handleTableRowHover(i, false));
+                resultsTableBody.appendChild(row);
+            });
+        }
+
+        function updateSummary() {
+            const total = detectionResults.classes.length;
+            if (total === 0) {
+                summaryContent.innerHTML = `<p class="text-sm text-gray-600">No objects detected.</p>`;
+                return;
+            }
+            const classCounts = detectionResults.classes.reduce((acc, val) => {
+                acc[val] = (acc[val] || 0) + 1;
+                return acc;
+            }, {});
+
+            let summaryHTML = `<p><strong>Total Objects:</strong> ${total}</p><ul class="list-disc list-inside mt-2 text-sm">`;
+            for (const [className, count] of Object.entries(classCounts).sort()) {
+                summaryHTML += `<li>${className}: ${count}</li>`;
+            }
+            summaryHTML += `</ul>`;
+            summaryContent.innerHTML = summaryHTML;
+        }
+
+        function resetUI() {
+            detectionResults = { boxes: [], classes: [] };
+            uiState.highlightedIndex = -1;
+            uiState.filterClass = 'all';
+            resultsTableBody.innerHTML = '';
+            summaryContent.innerHTML = '';
+            classFilter.innerHTML = '<option value="all">All Classes</option>';
+            imageContainer.className = 'relative w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50';
+            uploadedImage.src = '';
+            uploadedImage.classList.add('hidden');
+            placeholderText.classList.remove('hidden');
+            bboxCanvas.classList.add('hidden');
+            imageInfoContainer.classList.add('hidden');
+            infoPopover.classList.add('hidden');
+            clearCanvas();
+        }
+
+        // --- Interactivity Handlers ---
+        function handleTableRowHover(index, isHovering) {
+            uiState.highlightedIndex = isHovering ? index : -1;
+            redrawCanvas();
+        }
+        
+        function handleCanvasMouseMove(event) {
+            if (!uiState.showBoxes || detectionResults.boxes.length === 0) return;
+
+            const canvasRect = bboxCanvas.getBoundingClientRect();
+            const scaleX = bboxCanvas.width / uploadedImage.naturalWidth;
+            const scaleY = bboxCanvas.height / uploadedImage.naturalHeight;
+            const mouseX = event.clientX - canvasRect.left;
+            const mouseY = event.clientY - canvasRect.top;
+
+            let foundIndex = -1;
+            for (let i = detectionResults.boxes.length - 1; i >= 0; i--) {
+                const className = detectionResults.classes[i];
+                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) {
+                    continue;
+                }
+                const box = detectionResults.boxes[i];
                 const x = box.left * scaleX;
                 const y = box.top * scaleY;
                 const width = (box.right - box.left) * scaleX;
                 const height = (box.bottom - box.top) * scaleY;
 
-                // Draw the bounding box
-                ctx.strokeRect(x, y, width, height);
-
-                // Draw the label background
-                const className = classes[i] || 'unknown';
-                const textWidth = ctx.measureText(className).width;
-                ctx.fillRect(x, y, textWidth + 8, 20);
-
-                // Draw the label text
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(className, x + 4, y + 15);
-            });
+                if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
+                    foundIndex = i;
+                    break;
+                }
+            }
+            
+            if (foundIndex !== uiState.highlightedIndex) {
+                uiState.highlightedIndex = foundIndex;
+                redrawCanvas();
+                highlightTableRow(foundIndex);
+            }
         }
         
-        /**
-         * Clears the canvas of all drawings.
-         */
+        function highlightTableRow(index) {
+            clearTableHighlights();
+            if (index !== -1) {
+                const row = resultsTableBody.querySelector(`[data-index='${index}']`);
+                if(row) row.classList.add('highlight-row');
+            }
+        }
+
+        function clearTableHighlights() {
+            document.querySelectorAll('#results-table-body tr').forEach(r => r.classList.remove('highlight-row'));
+        }
+        
         function clearCanvas() {
             const ctx = bboxCanvas.getContext('2d');
             ctx.clearRect(0, 0, bboxCanvas.width, bboxCanvas.height);
         }
 
-        /**
-         * Sets the status message with appropriate styling.
-         * @param {string} message - The message to display.
-         * @param {'loading'|'success'|'error'|'info'} type - The type of message.
-         */
-        function setStatus(message, type = 'info') {
-            statusMessage.textContent = message;
-            statusMessage.classList.remove('text-blue-500', 'text-green-600', 'text-red-600');
-            switch (type) {
-                case 'loading':
-                    statusMessage.classList.add('text-blue-500');
-                    break;
-                case 'success':
-                    statusMessage.classList.add('text-green-600');
-                    break;
-                case 'error':
-                    statusMessage.classList.add('text-red-600');
-                    break;
-                default:
-                     statusMessage.classList.add('text-gray-700');
-            }
+        // --- Toolbar Actions ---
+        function toggleResultsVisibility() {
+            uiState.showBoxes = !uiState.showBoxes;
+            showResultsTooltip.textContent = uiState.showBoxes ? 'Hide Boxes' : 'Show Boxes';
+            redrawCanvas();
         }
-        
-        // Redraw boxes on window resize to maintain alignment
-        window.addEventListener('resize', () => {
-            // This is a simple implementation. For production, you might want to debounce this
-            // and re-run the detection or at least re-run the drawing logic if data is present.
-            if (uploadedImage.src && !detectButton.disabled) {
-                 // A simple approach is to just clear the canvas and ask user to re-detect
-                 clearCanvas();
-                 setStatus('Window resized. Please detect objects again for accurate boxes.', 'info');
-            }
-        });
 
+        function toggleLabelsVisibility() {
+            uiState.showLabels = !uiState.showLabels;
+            showLabelsTooltip.textContent = uiState.showLabels ? 'Hide Labels' : 'Show Labels';
+            redrawCanvas();
+        }
+
+        function downloadImage() {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = uploadedImage.naturalWidth;
+            tempCanvas.height = uploadedImage.naturalHeight;
+            tempCtx.drawImage(uploadedImage, 0, 0);
+
+            if (uiState.showBoxes) {
+                const colors = ['#FF3838', '#FF9D42', '#42A5F5', '#66BB6A', '#AB47BC', '#FFD700', '#00FFFF'];
+                detectionResults.boxes.forEach((box, i) => {
+                    const color = colors[i % colors.length];
+                    tempCtx.strokeStyle = color;
+                    tempCtx.lineWidth = 5;
+                    const x = box.left;
+                    const y = box.top;
+                    const width = box.right - box.left;
+                    const height = box.bottom - box.top;
+                    tempCtx.strokeRect(x, y, width, height);
+                    
+                    if (uiState.showLabels) {
+                        const className = detectionResults.classes[i] || 'unknown';
+                        tempCtx.fillStyle = color;
+                        tempCtx.font = 'bold 24px Inter';
+                        const textWidth = tempCtx.measureText(className).width;
+                        tempCtx.fillRect(x, y - 30, textWidth + 10, 30);
+                        tempCtx.fillStyle = '#FFFFFF';
+                        tempCtx.fillText(className, x + 5, y - 5);
+                    }
+                });
+            }
+
+            const link = document.createElement('a');
+            link.download = 'detection-result.png';
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+        }
     </script>
 </body>
 </html>

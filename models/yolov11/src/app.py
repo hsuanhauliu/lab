@@ -13,7 +13,7 @@ import convert
 # Load model
 model_path = "./data/yolo_model.pt"
 model = YOLO(model_path)
-
+model_labels = [name for _, name in model.names.items()]
 
 # Add this middleware
 origins = [
@@ -40,7 +40,20 @@ def inference(data: InferenceRequest) -> dict[str, Union[int, str]]:
     img = convert.base64ToNumpyArray(data.base64_img)
     results = model(img)
     bb, classes = to_lists(results, model.names)
-    return {"bounding_boxes": bb, "classes": classes}
+
+    model_info = model.info(detailed=False, verbose=True)
+    model_layers = model_info[0] if model_info and len(model_info) > 1 else None
+    model_parameters = model_info[1] if model_info and len(model_info) > 1 else None
+
+    return {
+        "bounding_boxes": bb,
+        "classes": classes,
+        "model_info": {
+            "labels": model_labels,
+            "layers": model_layers,
+            "parameters": model_parameters
+        },
+    }
 
 
 app = create_app(inference, response_model=InferenceResponse)
