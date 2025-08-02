@@ -39,6 +39,30 @@
         .transition-transform {
             transition: transform 0.2s ease-in-out;
         }
+        /* Navigation arrow styling */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        .nav-arrow:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .nav-arrow:disabled {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 h-full">
@@ -53,9 +77,9 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <label for="image-upload" class="inline-block bg-white py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">
-                            <span>Upload Image</span>
+                            <span>Upload Image(s)</span>
                         </label>
-                        <input type="file" id="image-upload" accept="image/*" class="hidden">
+                        <input type="file" id="image-upload" accept="image/*" class="hidden" multiple>
                         <span id="file-name" class="ml-3 text-sm text-gray-500"></span>
                     </div>
                     <div>
@@ -101,6 +125,10 @@
                     <canvas id="bbox-canvas" class="hidden"></canvas>
                     <p id="placeholder-text" class="text-gray-500">Please select an image to get started</p>
                     
+                    <!-- Navigation Arrows -->
+                    <button id="prev-image-btn" class="nav-arrow left-4" disabled>&lt;</button>
+                    <button id="next-image-btn" class="nav-arrow right-4" disabled>&gt;</button>
+
                     <!-- Image Info Icon and Popover -->
                     <div id="image-info-container" class="absolute top-2 right-2 hidden">
                         <button id="info-icon" class="p-1.5 bg-black bg-opacity-50 rounded-full hover:bg-opacity-75 focus:outline-none">
@@ -125,25 +153,26 @@
         <!-- Right Column: Results -->
         <div id="results-column" class="w-full lg:w-2/5 flex flex-col p-6 space-y-4 bg-gray-100 border-l border-gray-200 overflow-y-auto">
             <div class="bg-white rounded-lg shadow-sm">
-                <button id="toggle-model-summary" class="w-full flex justify-between items-center p-4">
-                    <h3 class="font-bold text-lg">Model Summary</h3>
-                    <svg class="w-5 h-5 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div id="model-summary-content" class="p-4 pt-0 hidden">
-                   <p class="text-sm text-gray-600">Model details will be displayed here.</p>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm">
-                 <button id="toggle-detection-summary" class="w-full flex justify-between items-center p-4">
-                    <h3 class="font-bold text-lg">Detection Summary</h3>
+                <button id="toggle-summary" class="w-full flex justify-between items-center p-4">
+                    <h3 class="font-bold text-lg">Summary</h3>
                     <svg class="w-5 h-5 text-gray-500 transition-transform rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
-                <div id="summary-content" class="p-4 pt-0"></div>
+                <div id="summary-container-content" class="p-4 pt-0 space-y-4">
+                   <div id="detection-summary-section">
+                       <h4 class="font-semibold text-md text-gray-800 mb-2">Detection Summary</h4>
+                       <div id="detection-summary-content">
+                            <p class="text-sm text-gray-600">No detections yet.</p>
+                       </div>
+                   </div>
+                   <div id="model-summary-section">
+                       <h4 class="font-semibold text-md text-gray-800 mb-2">Model Summary</h4>
+                       <div id="model-summary-content">
+                           <p class="text-sm text-gray-600">Run detection to see model details.</p>
+                       </div>
+                   </div>
+                </div>
             </div>
 
             <div class="bg-white border rounded-lg shadow-sm flex flex-col flex-grow min-h-0">
@@ -193,7 +222,8 @@
         const downloadBtn = document.getElementById('download-btn');
         const showResultsTooltip = document.getElementById('show-results-tooltip');
         const showLabelsTooltip = document.getElementById('show-labels-tooltip');
-        const summaryContent = document.getElementById('summary-content');
+        const detectionSummaryContent = document.getElementById('detection-summary-content');
+        const modelSummaryContent = document.getElementById('model-summary-content');
         const resultsTableBody = document.getElementById('results-table-body');
         const progressContainer = document.getElementById('progress-container');
         const progressBar = document.getElementById('progress-bar');
@@ -207,10 +237,13 @@
         const infoDimensions = document.getElementById('info-dimensions');
         const infoType = document.getElementById('info-type');
 
+        // Navigation
+        const prevImageBtn = document.getElementById('prev-image-btn');
+        const nextImageBtn = document.getElementById('next-image-btn');
+
         // Collapsible section elements
-        const toggleModelSummaryBtn = document.getElementById('toggle-model-summary');
-        const modelSummaryContent = document.getElementById('model-summary-content');
-        const toggleDetectionSummaryBtn = document.getElementById('toggle-detection-summary');
+        const toggleSummaryBtn = document.getElementById('toggle-summary');
+        const summaryContainerContent = document.getElementById('summary-container-content');
         const toggleResultsTableBtn = document.getElementById('toggle-results-table');
         const resultsTableContainer = document.getElementById('results-table-container');
         const filterContainer = document.getElementById('filter-container');
@@ -218,9 +251,9 @@
 
         // --- State Management ---
         const backendUrl = 'http://localhost:8000/predict';
-        let base64ImageString = '';
-        let detectionResults = { boxes: [], classes: [] };
-        let imageMetadata = {};
+        let imageList = [];
+        let modelInfo = null;
+        let currentImageIndex = -1;
         let uiState = {
             showBoxes: true,
             showLabels: true,
@@ -230,40 +263,24 @@
 
         // --- Event Listeners ---
         imageUpload.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-                fileNameSpan.textContent = '';
-                return;
-            };
-
-            imageMetadata = {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-            };
-
-            fileNameSpan.textContent = file.name;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                resetUI(); 
-                uploadedImage.src = e.target.result;
-                // Wait for image to load to get dimensions
-                uploadedImage.onload = () => {
-                    imageMetadata.width = uploadedImage.naturalWidth;
-                    imageMetadata.height = uploadedImage.naturalHeight;
-                    populateImageInfo();
-                    imageInfoContainer.classList.remove('hidden');
-
-                    uploadedImage.classList.remove('hidden');
-                    placeholderText.classList.add('hidden');
-                    imageContainer.className = 'relative w-full h-full flex items-center justify-center bg-white rounded-lg overflow-hidden';
-                    bboxCanvas.classList.remove('hidden');
-                    base64ImageString = e.target.result.split(',')[1];
-                    detectButton.disabled = false;
-                    redrawCanvas(); // Initial draw in case of resize before detection
-                };
-            };
-            reader.readAsDataURL(file);
+            if (event.target.files.length === 0) return;
+            resetUI();
+            imageList = Array.from(event.target.files).map(file => ({
+                file: file,
+                src: URL.createObjectURL(file),
+                metadata: {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                },
+                detectionResults: null
+            }));
+            
+            if (imageList.length > 0) {
+                currentImageIndex = 0;
+                displayImage(currentImageIndex);
+            }
+            updateNavButtons();
         });
 
         detectButton.addEventListener('click', handleDetection);
@@ -279,17 +296,29 @@
             }
         });
         window.addEventListener('resize', () => {
-            if (uploadedImage.src) redrawCanvas();
+            if (imageList.length > 0) redrawCanvas();
+        });
+
+        // Navigation listeners
+        prevImageBtn.addEventListener('click', () => {
+            if (currentImageIndex > 0) {
+                currentImageIndex--;
+                displayImage(currentImageIndex);
+            }
+        });
+        nextImageBtn.addEventListener('click', () => {
+            if (currentImageIndex < imageList.length - 1) {
+                currentImageIndex++;
+                displayImage(currentImageIndex);
+            }
         });
 
         // Collapsible section listeners
-        [toggleModelSummaryBtn, toggleDetectionSummaryBtn].forEach(button => {
-            button.addEventListener('click', () => {
-                const content = button.nextElementSibling;
-                const icon = button.querySelector('svg');
-                content.classList.toggle('hidden');
-                icon.classList.toggle('rotate-180');
-            });
+        toggleSummaryBtn.addEventListener('click', () => {
+            const content = summaryContainerContent;
+            const icon = toggleSummaryBtn.querySelector('svg');
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
         });
 
         toggleResultsTableBtn.addEventListener('click', () => {
@@ -298,7 +327,6 @@
             filterContainer.classList.toggle('hidden');
             icon.classList.toggle('rotate-180');
         });
-
 
         // Image Info Popover Listener
         infoIcon.addEventListener('click', (e) => {
@@ -320,59 +348,109 @@
 
 
         // --- Core Functions ---
+        function displayImage(index) {
+            if (index < 0 || index >= imageList.length) return;
+            
+            const currentImage = imageList[index];
+            uploadedImage.src = currentImage.src;
+
+            uploadedImage.onload = () => {
+                if (!currentImage.metadata.width) {
+                    currentImage.metadata.width = uploadedImage.naturalWidth;
+                    currentImage.metadata.height = uploadedImage.naturalHeight;
+                }
+                
+                populateImageInfo();
+                imageInfoContainer.classList.remove('hidden');
+                uploadedImage.classList.remove('hidden');
+                placeholderText.classList.add('hidden');
+                imageContainer.className = 'relative w-full h-full flex items-center justify-center bg-white rounded-lg overflow-hidden';
+                bboxCanvas.classList.remove('hidden');
+                detectButton.disabled = false;
+                
+                if (currentImage.detectionResults) {
+                    uiState.filterClass = 'all';
+                    populateClassFilter();
+                    populateResultsTable();
+                    updateSummary();
+                    redrawCanvas();
+                } else {
+                    clearResults();
+                }
+                // Always update model summary in case it was fetched for another image
+                populateModelSummary();
+                updateNavButtons();
+                fileNameSpan.textContent = `${currentImage.metadata.name} (${index + 1}/${imageList.length})`;
+            };
+        }
+
         async function handleDetection() {
-            if (!base64ImageString) return;
+            if (currentImageIndex === -1) return;
+            
+            const currentImage = imageList[currentImageIndex];
             
             detectButton.disabled = true;
             progressContainer.classList.remove('hidden');
             progressBar.style.width = '0%';
             setTimeout(() => { progressBar.style.width = '70%'; }, 100);
 
-            resultsTableBody.innerHTML = '';
-            summaryContent.innerHTML = '';
-            clearCanvas();
+            clearResults();
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(currentImage.file);
+            reader.onloadend = async () => {
+                const base64ImageString = reader.result.split(',')[1];
+                try {
+                    const response = await fetch(backendUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ base64_img: base64ImageString }),
+                    });
 
-            try {
-                const response = await fetch(backendUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ base64_img: base64ImageString }),
-                });
+                    if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    if (!data.bounding_boxes || !data.classes) throw new Error('Invalid response format from server.');
+                    
+                    currentImage.detectionResults = { boxes: data.bounding_boxes, classes: data.classes };
+                    if (data.model_info) {
+                        modelInfo = data.model_info;
+                    }
+                    
+                    uiState.showBoxes = true;
+                    uiState.showLabels = true;
+                    uiState.filterClass = 'all';
+                    populateClassFilter();
+                    populateResultsTable();
+                    updateSummary();
+                    populateModelSummary();
+                    redrawCanvas();
 
-                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
-                
-                const data = await response.json();
-                if (!data.bounding_boxes || !data.classes) throw new Error('Invalid response format from server.');
-                
-                detectionResults = { boxes: data.bounding_boxes, classes: data.classes };
-                
-                uiState.showBoxes = true;
-                uiState.showLabels = true;
-                populateClassFilter();
-                populateResultsTable();
-                updateSummary();
-                redrawCanvas();
-
-            } catch (error) {
-                console.error('Error during object detection:', error);
-            } finally {
-                progressBar.style.width = '100%';
-                setTimeout(() => {
-                    progressContainer.classList.add('hidden');
-                    detectButton.disabled = false;
-                }, 500);
-            }
+                } catch (error) {
+                    console.error('Error during object detection:', error);
+                } finally {
+                    progressBar.style.width = '100%';
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                        detectButton.disabled = false;
+                    }, 500);
+                }
+            };
         }
 
         function redrawCanvas() {
-            if (!uploadedImage.src || !uploadedImage.complete || uploadedImage.naturalWidth === 0) return;
+            if (currentImageIndex === -1 || !uploadedImage.complete || uploadedImage.naturalWidth === 0) return;
+            
+            const currentImage = imageList[currentImageIndex];
+            const detectionResults = currentImage.detectionResults;
+            
             const ctx = bboxCanvas.getContext('2d');
             
             bboxCanvas.width = uploadedImage.clientWidth;
             bboxCanvas.height = uploadedImage.clientHeight;
             ctx.clearRect(0, 0, bboxCanvas.width, bboxCanvas.height);
 
-            if (!uiState.showBoxes || detectionResults.boxes.length === 0) return;
+            if (!uiState.showBoxes || !detectionResults || detectionResults.boxes.length === 0) return;
 
             const scaleX = bboxCanvas.clientWidth / uploadedImage.naturalWidth;
             const scaleY = bboxCanvas.clientHeight / uploadedImage.naturalHeight;
@@ -380,10 +458,7 @@
 
             detectionResults.boxes.forEach((box, i) => {
                 const className = detectionResults.classes[i];
-                // Skip if a filter is active and the class doesn't match
-                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) {
-                    return;
-                }
+                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) return;
 
                 const isHighlighted = (i === uiState.highlightedIndex);
                 const color = colors[i % colors.length];
@@ -409,14 +484,18 @@
 
         // --- UI Update Functions ---
         function populateImageInfo() {
-            infoFileName.textContent = imageMetadata.name;
-            infoFileSize.textContent = `${(imageMetadata.size / 1024).toFixed(2)} KB`;
-            infoDimensions.textContent = `${imageMetadata.width} x ${imageMetadata.height} px`;
-            infoType.textContent = imageMetadata.type;
+            const metadata = imageList[currentImageIndex].metadata;
+            infoFileName.textContent = metadata.name;
+            infoFileSize.textContent = `${(metadata.size / 1024).toFixed(2)} KB`;
+            infoDimensions.textContent = `${metadata.width} x ${metadata.height} px`;
+            infoType.textContent = metadata.type;
         }
         
         function populateClassFilter() {
+            const detectionResults = imageList[currentImageIndex]?.detectionResults;
             classFilter.innerHTML = '<option value="all">All Classes</option>';
+            if (!detectionResults) return;
+            
             const uniqueClasses = [...new Set(detectionResults.classes)];
             uniqueClasses.sort().forEach(className => {
                 const option = document.createElement('option');
@@ -427,15 +506,17 @@
         }
 
         function populateResultsTable() {
+            const detectionResults = imageList[currentImageIndex]?.detectionResults;
             resultsTableBody.innerHTML = '';
+            if (!detectionResults) return;
+
             let displayIndex = 1;
             detectionResults.classes.forEach((className, i) => {
-                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) {
-                    return; // Skip if it doesn't match the filter
-                }
+                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) return;
+                
                 const row = document.createElement('tr');
                 row.className = 'cursor-pointer hover:bg-gray-50';
-                row.dataset.index = i; // Use original index for highlighting
+                row.dataset.index = i;
                 row.innerHTML = `
                     <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${displayIndex++}</td>
                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${className}</td>
@@ -447,11 +528,12 @@
         }
 
         function updateSummary() {
-            const total = detectionResults.classes.length;
-            if (total === 0) {
-                summaryContent.innerHTML = `<p class="text-sm text-gray-600">No objects detected.</p>`;
+            const detectionResults = imageList[currentImageIndex]?.detectionResults;
+            if (!detectionResults || detectionResults.classes.length === 0) {
+                detectionSummaryContent.innerHTML = `<p class="text-sm text-gray-600">No objects detected.</p>`;
                 return;
             }
+            const total = detectionResults.classes.length;
             const classCounts = detectionResults.classes.reduce((acc, val) => {
                 acc[val] = (acc[val] || 0) + 1;
                 return acc;
@@ -462,16 +544,50 @@
                 summaryHTML += `<li>${className}: ${count}</li>`;
             }
             summaryHTML += `</ul>`;
-            summaryContent.innerHTML = summaryHTML;
+            detectionSummaryContent.innerHTML = summaryHTML;
+        }
+
+        function populateModelSummary() {
+            if (!modelInfo) {
+                modelSummaryContent.innerHTML = `<p class="text-sm text-gray-600">Run detection to see model details.</p>`;
+                return;
+            }
+            const labelsHtml = modelInfo.labels.map(label => `<span class="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs font-semibold text-gray-700 mr-2 mb-2">${label}</span>`).join('');
+            modelSummaryContent.innerHTML = `
+                <div class="space-y-2 text-sm">
+                    <p><strong>Parameters:</strong> ${modelInfo.parameters.toLocaleString()}</p>
+                    <p><strong>Layers:</strong> ${modelInfo.layers.toLocaleString()}</p>
+                    <div>
+                        <p class="font-semibold">Labels (${modelInfo.labels.length}):</p>
+                        <div class="mt-1 max-h-24 overflow-y-auto p-2 bg-gray-50 rounded-md border">
+                            ${labelsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateNavButtons() {
+            prevImageBtn.disabled = currentImageIndex <= 0;
+            nextImageBtn.disabled = currentImageIndex >= imageList.length - 1;
+        }
+
+        function clearResults() {
+            resultsTableBody.innerHTML = '';
+            detectionSummaryContent.innerHTML = '<p class="text-sm text-gray-600">No detections yet.</p>';
+            classFilter.innerHTML = '<option value="all">All Classes</option>';
+            uiState.highlightedIndex = -1;
+            clearCanvas();
         }
 
         function resetUI() {
-            detectionResults = { boxes: [], classes: [] };
-            uiState.highlightedIndex = -1;
+            imageList.forEach(img => URL.revokeObjectURL(img.src));
+            imageList = [];
+            modelInfo = null;
+            currentImageIndex = -1;
             uiState.filterClass = 'all';
-            resultsTableBody.innerHTML = '';
-            summaryContent.innerHTML = '';
-            classFilter.innerHTML = '<option value="all">All Classes</option>';
+            clearResults();
+            populateModelSummary();
             imageContainer.className = 'relative w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50';
             uploadedImage.src = '';
             uploadedImage.classList.add('hidden');
@@ -479,7 +595,9 @@
             bboxCanvas.classList.add('hidden');
             imageInfoContainer.classList.add('hidden');
             infoPopover.classList.add('hidden');
-            clearCanvas();
+            detectButton.disabled = true;
+            fileNameSpan.textContent = '';
+            updateNavButtons();
         }
 
         // --- Interactivity Handlers ---
@@ -489,7 +607,9 @@
         }
         
         function handleCanvasMouseMove(event) {
-            if (!uiState.showBoxes || detectionResults.boxes.length === 0) return;
+            if (!uiState.showBoxes || currentImageIndex === -1) return;
+            const detectionResults = imageList[currentImageIndex].detectionResults;
+            if (!detectionResults) return;
 
             const canvasRect = bboxCanvas.getBoundingClientRect();
             const scaleX = bboxCanvas.width / uploadedImage.naturalWidth;
@@ -500,9 +620,8 @@
             let foundIndex = -1;
             for (let i = detectionResults.boxes.length - 1; i >= 0; i--) {
                 const className = detectionResults.classes[i];
-                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) {
-                    continue;
-                }
+                if (uiState.filterClass !== 'all' && className !== uiState.filterClass) continue;
+                
                 const box = detectionResults.boxes[i];
                 const x = box.left * scaleX;
                 const y = box.top * scaleY;
@@ -553,13 +672,17 @@
         }
 
         function downloadImage() {
+            if (currentImageIndex === -1) return;
+            const currentImage = imageList[currentImageIndex];
+            const detectionResults = currentImage.detectionResults;
+
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = uploadedImage.naturalWidth;
             tempCanvas.height = uploadedImage.naturalHeight;
             tempCtx.drawImage(uploadedImage, 0, 0);
 
-            if (uiState.showBoxes) {
+            if (uiState.showBoxes && detectionResults) {
                 const colors = ['#FF3838', '#FF9D42', '#42A5F5', '#66BB6A', '#AB47BC', '#FFD700', '#00FFFF'];
                 detectionResults.boxes.forEach((box, i) => {
                     const color = colors[i % colors.length];
@@ -584,7 +707,7 @@
             }
 
             const link = document.createElement('a');
-            link.download = 'detection-result.png';
+            link.download = `detection-${currentImage.metadata.name}`;
             link.href = tempCanvas.toDataURL('image/png');
             link.click();
         }
