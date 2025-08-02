@@ -2,13 +2,16 @@
 # python ./src/inference_img.py
 
 
-import numpy as np
-from ultralytics import YOLO
+from rpc import InferenceRequest, InferenceResponse, Coordinate
+import convert
+
+from typing import List, Tuple, Union
+
 from fast_serve import create_app
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Tuple, Union
-from rpc import InferenceRequest, InferenceResponse
-import convert
+from fastapi.staticfiles import StaticFiles
+import numpy as np
+from ultralytics import YOLO
 
 # Load model
 model_path = "./data/yolo_model.pt"
@@ -25,20 +28,25 @@ origins = [
 
 ###### Helper Functions ######
 # Convert the model inference results to a list of bounding boxes and a list of corresponding class names.
-def to_lists(model_results, class_names) -> Tuple[List[str], List[str]]:
-    bb, classes = [], []
+def to_lists(
+    model_results, class_names
+) -> Tuple[List[List[Coordinate]], List[List[str]]]:
+    all_bb, all_classes = [], []
     for result in model_results:
+        bb, classes = [], []
         for box in result.boxes:
             # get box coordinates in (left, top, right, bottom)
             bb.append(convert.boxToCoordinates(box))
             classes.append(class_names[int(box.cls)])
-    return bb, classes
+        all_bb.append(bb)
+        all_classes.append(classes)
+    return all_bb, all_classes
 
 
-# Entry point
+# Inference entry point
 def inference(data: InferenceRequest) -> dict[str, Union[int, str]]:
-    img = convert.base64ToNumpyArray(data.base64_img)
-    results = model(img)
+    imgs = convert.base64ListToNumpyArrayList(data.base64_imgs)
+    results = model(imgs)
     bb, classes = to_lists(results, model.names)
 
     model_info = model.info(detailed=False, verbose=True)
@@ -51,12 +59,14 @@ def inference(data: InferenceRequest) -> dict[str, Union[int, str]]:
         "model_info": {
             "labels": model_labels,
             "layers": model_layers,
-            "parameters": model_parameters
+            "parameters": model_parameters,
         },
     }
 
 
 app = create_app(inference, response_model=InferenceResponse)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

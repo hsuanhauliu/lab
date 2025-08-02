@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Object Detection - Friendly UI</title>
+    <title>Yolov11</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -233,7 +233,45 @@
 
         <!-- Right Column: Results -->
         <div id="results-column" class="w-full lg:w-2/5 flex flex-col p-8 space-y-6 bg-light overflow-y-auto">
-            <div class="bg-white rounded-2xl shadow-sm border">
+            <div class="bg-white border rounded-2xl shadow-sm flex flex-col overflow-hidden" style="max-height: 60vh;">
+                <div class="p-5 flex-shrink-0 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-dark">Detected Objects</h3>
+                        <button id="toggle-results-table" class="p-1">
+                            <svg class="w-6 h-6 text-gray-400 transition-transform rotate-180"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="filter-container" class="mt-3">
+                        <label for="class-filter" class="text-sm font-medium text-secondary mr-2">Filter by
+                            class:</label>
+                        <select id="class-filter"
+                            class="w-full p-2.5 pr-10 border border-gray-200 bg-light rounded-xl shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm transition-all"></select>
+                    </div>
+                </div>
+                <div id="results-table-container" class="overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-light sticky top-0">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider w-16">
+                                    #</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
+                                    Class</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border flex-shrink-0">
                 <button id="toggle-summary" class="w-full flex justify-between items-center p-5">
                     <h3 class="font-bold text-lg text-dark">Summary</h3>
                     <svg class="w-6 h-6 text-gray-400 transition-transform rotate-180"
@@ -254,45 +292,6 @@
                             <p class="text-sm text-secondary">No summary yet.</p>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="bg-white border rounded-2xl shadow-sm flex flex-col flex-grow min-h-0">
-                <div class="p-5 flex-shrink-0 border-b">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-lg text-dark">Detected Objects</h3>
-                        <button id="toggle-results-table" class="p-1">
-                            <svg class="w-6 h-6 text-gray-400 transition-transform rotate-180"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="filter-container" class="mt-3">
-                        <label for="class-filter" class="text-sm font-medium text-secondary mr-2">Filter by
-                            class:</label>
-                        <select id="class-filter"
-                            class="w-full p-2.5 pr-10 border border-gray-200 bg-light rounded-xl shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary text-sm transition-all"></select>
-                    </div>
-                </div>
-                <div id="results-table-container" class="overflow-y-auto flex-grow">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-light sticky top-0">
-                            <tr>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider w-16">
-                                    #</th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
-                                    Class</th>
-                            </tr>
-                        </thead>
-                        <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
-                            <!-- Rows will be inserted here -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -387,7 +386,9 @@
             }
         });
         window.addEventListener('resize', () => {
-            if (imageList.length > 0) redrawCanvas();
+            if (imageList.length > 0) {
+                requestAnimationFrame(redrawCanvas);
+            }
         });
 
         // Navigation listeners
@@ -464,7 +465,7 @@
                     populateClassFilter();
                     populateResultsTable();
                     updateSummary();
-                    redrawCanvas();
+                    requestAnimationFrame(redrawCanvas);
                 } else {
                     clearResults();
                 }
@@ -475,75 +476,91 @@
         }
 
         async function handleDetection() {
-            if (currentImageIndex === -1) return;
-
-            const currentImage = imageList[currentImageIndex];
+            if (imageList.length === 0) return;
 
             detectButton.disabled = true;
             progressContainer.classList.remove('hidden');
             progressBar.style.width = '0%';
-            setTimeout(() => { progressBar.style.width = '70%'; }, 100);
 
-            clearResults();
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress = Math.min(progress + Math.random() * 10, 90);
+                progressBar.style.width = `${progress}%`;
+            }, 500);
 
-            const reader = new FileReader();
-            reader.readAsDataURL(currentImage.file);
-            reader.onloadend = async () => {
-                const base64ImageString = reader.result.split(',')[1];
-                try {
-                    const response = await fetch(backendUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ base64_img: base64ImageString }),
-                    });
+            const base64Promises = imageList.map(img => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(img.file);
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = error => reject(error);
+                });
+            });
 
-                    if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+            try {
+                const base64Images = await Promise.all(base64Promises);
 
-                    const data = await response.json();
-                    if (!data.bounding_boxes || !data.classes) throw new Error('Invalid response format from server.');
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ base64_imgs: base64Images }),
+                });
 
-                    currentImage.detectionResults = { boxes: data.bounding_boxes, classes: data.classes };
-                    if (data.model_info) {
-                        modelInfo = data.model_info;
-                    }
+                if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
 
-                    uiState.showBoxes = true;
-                    uiState.showLabels = true;
-                    uiState.filterClass = 'all';
-                    populateClassFilter();
-                    populateResultsTable();
-                    updateSummary();
-                    populateModelSummary();
-                    redrawCanvas();
-
-                } catch (error) {
-                    console.error('Error during object detection:', error);
-                } finally {
-                    progressBar.style.width = '100%';
-                    setTimeout(() => {
-                        progressContainer.classList.add('hidden');
-                        detectButton.disabled = false;
-                    }, 500);
+                const data = await response.json();
+                if (!data.bounding_boxes || !data.classes || !data.model_info) {
+                    throw new Error('Invalid response format from server.');
                 }
-            };
+
+                imageList.forEach((img, index) => {
+                    img.detectionResults = {
+                        boxes: data.bounding_boxes[index],
+                        classes: data.classes[index]
+                    };
+                });
+
+                modelInfo = data.model_info;
+
+                displayImage(currentImageIndex);
+
+            } catch (error) {
+                console.error('Error during object detection:', error);
+            } finally {
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    detectButton.disabled = false;
+                }, 500);
+            }
         }
 
+
         function redrawCanvas() {
-            if (currentImageIndex === -1 || !uploadedImage.complete || uploadedImage.naturalWidth === 0) return;
+            if (currentImageIndex === -1 || !uploadedImage.complete || !uploadedImage.naturalWidth) return;
 
             const currentImage = imageList[currentImageIndex];
             const detectionResults = currentImage.detectionResults;
 
             const ctx = bboxCanvas.getContext('2d');
 
-            bboxCanvas.width = uploadedImage.clientWidth;
-            bboxCanvas.height = uploadedImage.clientHeight;
+            const containerRect = imageContainer.getBoundingClientRect();
+            bboxCanvas.width = containerRect.width;
+            bboxCanvas.height = containerRect.height;
             ctx.clearRect(0, 0, bboxCanvas.width, bboxCanvas.height);
 
             if (!uiState.showBoxes || !detectionResults || detectionResults.boxes.length === 0) return;
 
-            const scaleX = bboxCanvas.clientWidth / uploadedImage.naturalWidth;
-            const scaleY = bboxCanvas.clientHeight / uploadedImage.naturalHeight;
+            const imageRect = uploadedImage.getBoundingClientRect();
+
+            const renderedWidth = imageRect.width;
+            const renderedHeight = imageRect.height;
+            const offsetX = imageRect.left - containerRect.left;
+            const offsetY = imageRect.top - containerRect.top;
+
+            const scaleX = renderedWidth / uploadedImage.naturalWidth;
+            const scaleY = renderedHeight / uploadedImage.naturalHeight;
             const colors = ['#f97316', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#eab308'];
 
             detectionResults.boxes.forEach((box, i) => {
@@ -554,8 +571,8 @@
                 const color = colors[i % colors.length];
                 ctx.strokeStyle = color;
                 ctx.lineWidth = isHighlighted ? 4 : 2.5;
-                const x = box.left * scaleX;
-                const y = box.top * scaleY;
+                const x = box.left * scaleX + offsetX;
+                const y = box.top * scaleY + offsetY;
                 const width = (box.right - box.left) * scaleX;
                 const height = (box.bottom - box.top) * scaleY;
                 ctx.strokeRect(x, y, width, height);
@@ -702,8 +719,15 @@
             if (!detectionResults) return;
 
             const canvasRect = bboxCanvas.getBoundingClientRect();
-            const scaleX = bboxCanvas.width / uploadedImage.naturalWidth;
-            const scaleY = bboxCanvas.height / uploadedImage.naturalHeight;
+            const imageRect = uploadedImage.getBoundingClientRect();
+
+            const renderedWidth = imageRect.width;
+            const renderedHeight = imageRect.height;
+            const offsetX = imageRect.left - canvasRect.left;
+            const offsetY = imageRect.top - canvasRect.top;
+
+            const scaleX = renderedWidth / uploadedImage.naturalWidth;
+            const scaleY = renderedHeight / uploadedImage.naturalHeight;
             const mouseX = event.clientX - canvasRect.left;
             const mouseY = event.clientY - canvasRect.top;
 
@@ -713,8 +737,8 @@
                 if (uiState.filterClass !== 'all' && className !== uiState.filterClass) continue;
 
                 const box = detectionResults.boxes[i];
-                const x = box.left * scaleX;
-                const y = box.top * scaleY;
+                const x = box.left * scaleX + offsetX;
+                const y = box.top * scaleY + offsetY;
                 const width = (box.right - box.left) * scaleX;
                 const height = (box.bottom - box.top) * scaleY;
 

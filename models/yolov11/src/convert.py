@@ -4,16 +4,23 @@ import base64
 
 import cv2
 import numpy as np
+from typing import List
 
 
-def base64ToNumpyArray(img: str) -> np.ndarray:
+def base64ListToNumpyArrayList(img_strs: List[str]) -> List[np.ndarray]:
+    imgs = []
+    for img in img_strs:
+        imgs.append(base64ToNumpyArray(img))
+    return imgs
+
+def base64ToNumpyArray(img_str: str) -> np.ndarray:
     """Convert base64 image to numpy array."""
-    if "," in img:
+    if "," in img_str:
         # Split the string by the comma and take the second part
-        img = img.split(',')[1]
+        img_str = img_str.split(',')[1]
 
-    img = base64.b64decode(img)
-    img = np.fromstring(img, dtype=np.uint8)
+    img_bytes = base64.b64decode(img_str)
+    img = np.fromstring(img_bytes, dtype=np.uint8)
     return cv2.imdecode(img, cv2.IMREAD_COLOR)
 
 

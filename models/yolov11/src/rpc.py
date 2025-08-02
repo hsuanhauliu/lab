@@ -21,7 +21,7 @@ class ModelInfo(BaseModel):
 
 # Inference Request format.
 class InferenceRequest(BaseModel):
-    base64_img: str  # base64 encoded image
+    base64_imgs: List[str]  # base64 encoded images
 
 
 # Inference Response format.
@@ -31,7 +31,6 @@ class InferenceResponse(BaseModel):
 
     The order of both lists align with each other.
     """
-
-    bounding_boxes: List[Coordinate]
-    classes: List[str]
+    bounding_boxes: List[List[Coordinate]]
+    classes: List[List[str]]
     model_info: ModelInfo
