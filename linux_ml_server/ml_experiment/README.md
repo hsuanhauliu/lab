@@ -17,4 +17,6 @@ Ports:
 
 Files:
 
-- Dockerfile: added some additional packages on top of the gpu-jupyter Dockerfile.
+- jupyter_notebook/Dockerfile: added some additional packages on top of the gpu-jupyter Dockerfile.
+- start_env.sh: start the original jupyter notebook container.
+- stop_env.sh: stop the original jupyter notebook container.
