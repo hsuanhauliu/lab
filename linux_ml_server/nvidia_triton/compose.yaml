@@ -1,8 +1,8 @@
 name: ml-serving-stack
 services:
-  # Triton server hosting deep learning models.
-  # Doc: https://github.com/triton-inference-server/server
   triton-server:
+    # Triton server hosting deep learning models.
+    # Doc: https://github.com/triton-inference-server/server
     container_name: triton_env
     deploy:
       resources:
@@ -14,6 +14,7 @@ services:
                 - gpu
     network_mode: host
     volumes:
+      # Place models and configs in ~/data/triton/models
       - ~/data/triton/models:/models
     image: nvcr.io/nvidia/tritonserver:25.02-py3
     command: tritonserver --model-repository=/models --model-control-mode explicit --load-model=*

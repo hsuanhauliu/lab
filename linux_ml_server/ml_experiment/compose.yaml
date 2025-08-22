@@ -1,12 +1,8 @@
 name: ml-experiment-stack
 services:
-  # Jupyter Notebook with most useful libraries installed.
-  # Doc: https://github.com/iot-salzburg/gpu-jupyter
-  #
-  # Ports mapping:
-  # - 8080: Jupyter notebook UI
-  # - 8081: Tensorboard UI
   gpu-jupyter:
+    # Jupyter Notebook with most useful libraries installed.
+    # Doc: https://github.com/iot-salzburg/gpu-jupyter
     container_name: jupyter_env
     build: jupyter_notebook/
     deploy:
@@ -18,10 +14,11 @@ services:
               capabilities:
                 - gpu
     ports:
-      - 8080:8888
-      - 8081:6006
+      - 8888:8888 # Jupyter notebook UI
+      - 8889:6006 # Tensorboard UI
     volumes:
-      - ~/data/ml_notebook:/home/jovyan
+      # Read notebooks from ~/data/notebooks
+      - ~/data/notebooks:/home/jovyan
     environment:
       JUPYTER_ENABLE_LAB: "yes"
       NB_UID: 1000:1000
@@ -31,22 +28,3 @@ services:
     # inside and outside of Docker.
     user: 1000:1000
     restart: always
-  gpu-comfyui:
-    container_name: comfyui
-    stdin_open: true
-    tty: true
-    restart: always
-    ports:
-      - 8082:8188
-    volumes:
-      - ~/data/comfyui:/root
-    image: yanwk/comfyui-boot:cu124-slim
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities:
-                - gpu
-

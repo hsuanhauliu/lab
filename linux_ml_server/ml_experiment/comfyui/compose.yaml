@@ -1,0 +1,20 @@
+name: comfyui-stack
+services:
+  gpu-comfyui:
+    container_name: comfyui
+    stdin_open: true
+    tty: true
+    restart: always
+    ports:
+      - 8188:8188
+    volumes:
+      - ~/data/comfyui:/root
+    image: yanwk/comfyui-boot:cu124-slim
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
