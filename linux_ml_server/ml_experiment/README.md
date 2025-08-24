@@ -15,8 +15,16 @@ Ports:
 - 8888: Notebook port.
 - 8889: Tensorboard port.
 
+Directories inside the Jupyter notebook environment:
+
+- `notebooks`: directories for all notebooks.
+- `logs`: Tensorboard log folder for model training.
+- `data`: dataset directory.
+- `test`: test data.
+- `output`: generated files.
+
 Files:
 
-- jupyter_notebook/Dockerfile: added some additional packages on top of the gpu-jupyter Dockerfile.
-- start_env.sh: start the original jupyter notebook container.
-- stop_env.sh: stop the original jupyter notebook container.
+- `jupyter_notebook/Dockerfile`: added some additional packages on top of the gpu-jupyter Dockerfile.
+- `start_env.sh`: start the original jupyter notebook container.
+- `stop_env.sh`: stop the original jupyter notebook container.
