@@ -18,10 +18,10 @@ Ports:
 Directories inside the Jupyter notebook environment:
 
 - `notebooks`: directories for all notebooks.
+- `notebooks/data`: dataset directory.
+- `notebooks/test`: test data.
+- `notebooks/output`: generated files.
 - `logs`: Tensorboard log folder for model training.
-- `data`: dataset directory.
-- `test`: test data.
-- `output`: generated files.
 
 Files:
 

@@ -17,8 +17,10 @@ services:
       - 8888:8888 # Jupyter notebook UI
       - 8889:6006 # Tensorboard UI
     volumes:
-      # Read notebooks from ~/data/notebooks
-      - ~/data/notebooks:/home/jovyan
+      # notebooks dir is meant for all files for Jupyter notebook
+      - ~/data/experiments/notebooks:/home/jovyan/notebooks
+      # logs dir is meant for Tensorboard logs
+      - ~/data/experiments/logs:/home/jovyan/logs
     environment:
       JUPYTER_ENABLE_LAB: "yes"
       NB_UID: 1000:1000
