@@ -8,7 +8,7 @@ FROM cschranz/gpu-jupyter:v1.9_cuda-12.6_ubuntu-24.04
 # Install custom packages
 RUN pip install opencv-python opencv-contrib-python \
 	transformers huggingface_hub \
-	onnxruntime \
+	onnxruntime-gpu \
 	soundfile librosa 
 
 # Download Jupyter notebook extensions
