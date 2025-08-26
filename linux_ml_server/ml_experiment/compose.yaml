@@ -23,6 +23,7 @@ services:
       - ~/data/experiments/logs:/home/jovyan/logs
     environment:
       JUPYTER_ENABLE_LAB: "yes"
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
       NB_UID: 1000:1000
       NB_GID: 1000:1000
     # Set user and group to 1000 so it's the same as host.
