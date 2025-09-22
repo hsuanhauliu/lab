@@ -7,6 +7,7 @@ Docker services for ML & CV experiment. Jupyter notebook + Tensorboard.
 docker compose up -d
 # set a token via env var
 # JUPYTER_TOKEN='yourpassword' docker compose up -d
+# add --build to force build the Docker image
 ./get_urls.sh           # get URL of the notebook with token
 ./start_tensorboard.sh  # optional: run if you need tensorboard
 docker compose down
