@@ -1,7 +1,4 @@
 # Lab
 
-My setup for various experiments.
+My local setup for conducting experiments.
 
-## Linux ML Server
-
-Linux ML Server setup.
