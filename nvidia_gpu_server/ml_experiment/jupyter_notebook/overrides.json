@@ -1,0 +1,232 @@
+{
+  "@jupyterlab/notebook-extension:tracker": {
+    "enableKernelInitNotification": false,
+    "codeCellConfig": {
+      "autoClosingBrackets": true,
+      "highlightActiveLine": true,
+      "lineNumbers": true,
+      "lineWrap": true
+    },
+    "defaultCell": "code",
+    "autoStartDefaultKernel": false,
+    "showInputPlaceholder": true,
+    "inputHistoryScope": "global",
+    "kernelShutdown": true,
+    "markdownCellConfig": {
+      "autoClosingBrackets": true
+    },
+    "autoRenderMarkdownCells": false,
+    "rawCellConfig": {
+      "lineNumbers": false,
+      "matchBrackets": false
+    },
+    "scrollPastEnd": true,
+    "recordTiming": false,
+    "overscanCount": 1,
+    "maxNumberOutputs": 50,
+    "scrollHeadingToTop": true,
+    "showEditorForReadOnlyMarkdown": true,
+    "kernelStatus": {
+      "showOnStatusBar": false,
+      "showProgress": true
+    },
+    "documentWideUndoRedo": false,
+    "showHiddenCellsButton": true,
+    "renderingLayout": "default",
+    "sideBySideLeftMarginOverride": "10px",
+    "sideBySideRightMarginOverride": "10px",
+    "sideBySideOutputRatio": 1,
+    "windowingMode": "full",
+    "accessKernelHistory": false
+  },
+  "@jupyterlab/filebrowser-extension:browser": {
+    "navigateToCurrentDirectory": true,
+    "useFuzzyFilter": true,
+    "filterDirectories": true,
+    "showLastModifiedColumn": true,
+    "showFileSizeColumn": false,
+    "showHiddenFiles": true,
+    "showFileCheckboxes": true,
+    "showFullPath": false,
+    "sortNotebooksFirst": true,
+    "singleClickNavigation": false
+  },
+  "@jupyterlab/apputils-extension:themes": {
+    "theme": "JupyterLab Dark",
+    "adaptive-theme": false,
+    "preferred-light-theme": "JupyterLab Light",
+    "preferred-dark-theme": "JupyterLab Dark",
+    "theme-scrollbars": false,
+    "overrides": {
+      "code-font-family": null,
+      "code-font-size": null,
+      "content-font-family": null,
+      "content-font-size1": null,
+      "ui-font-family": null,
+      "ui-font-size1": null
+    }
+  },
+  "@jupyterlab/apputils-extension:notification": {
+    "checkForUpdates": false,
+    "doNotDisturbMode": false,
+    "fetchNews": "none"
+  },
+  "@jupyterlab-contrib/spellchecker:plugin": {
+    "theme": "background-box",
+    "language": "en-us",
+    "checkComments": true,
+    "checkStrings": true,
+    "debounceTime": 200,
+    "ignore": [
+      "JupyterLab",
+      "Jupyter",
+      "JupyterHub",
+      "Voilà",
+      "Xeus",
+      "IPython"
+    ],
+    "mimeTypes": [
+      "text/plain",
+      "text/x-ipythongfm",
+      "text/x-rst",
+      "text/x-latex",
+      "text/x-ipython",
+      "text/x-rsrc"
+    ],
+    "onlineDictionaries": []
+  },
+  "@jupyterlab/completer-extension:manager": {
+    "availableProviders": {
+      "CompletionProvider:context": 500,
+      "CompletionProvider:kernel": 550
+    },
+    "providerTimeout": 1000,
+    "showDocumentationPanel": false,
+    "autoCompletion": true,
+    "suppressIfInlineCompleterActive": true
+  },
+  "@jupyterlab/notebook-extension:panel": {
+    "toolbar": [
+      {
+        "name": "save",
+        "rank": 10
+      },
+      {
+        "name": "insert",
+        "command": "notebook:insert-cell-below",
+        "icon": "ui-components:add",
+        "rank": 20
+      },
+      {
+        "name": "cut",
+        "command": "notebook:cut-cell",
+        "rank": 21
+      },
+      {
+        "name": "copy",
+        "command": "notebook:copy-cell",
+        "rank": 22
+      },
+      {
+        "name": "paste",
+        "command": "notebook:paste-cell-below",
+        "rank": 23
+      },
+      {
+        "name": "run",
+        "command": "notebook:run-cell-and-select-next",
+        "rank": 30
+      },
+      {
+        "name": "interrupt",
+        "command": "notebook:interrupt-kernel",
+        "rank": 31
+      },
+      {
+        "name": "restart",
+        "command": "notebook:restart-kernel",
+        "rank": 32
+      },
+      {
+        "name": "restart-and-run",
+        "command": "notebook:restart-run-all",
+        "rank": 33
+      },
+      {
+        "name": "cellType",
+        "rank": 40
+      },
+      {
+        "name": "spacer",
+        "type": "spacer",
+        "rank": 100
+      },
+      {
+        "name": "kernelName",
+        "rank": 1000
+      },
+      {
+        "name": "executionProgress",
+        "rank": 1002
+      },
+      {
+        "name": "scrollbar",
+        "command": "notebook:toggle-virtual-scrollbar",
+        "rank": 1003
+      }
+    ]
+  },
+  "jupyterlab_code_formatter:settings": {
+    "preferences": {
+      "default_formatter": {
+        "python": [
+          "isort",
+          "black"
+        ],
+        "R": "formatR",
+        "rust": "rustfmt",
+        "c++11": "astyle"
+      }
+    },
+    "black": {
+      "line_length": 120,
+      "string_normalization": true
+    },
+    "yapf": {
+      "style_config": "google"
+    },
+    "autopep8": {},
+    "isort": {
+      "multi_line_output": 3,
+      "include_trailing_comma": true,
+      "force_grid_wrap": 0,
+      "use_parentheses": true,
+      "ensure_newline_before_comments": true,
+      "line_length": 120,
+      "case_sensitive": true,
+      "force_alphabetical_sort": true
+    },
+    "formatR": {
+      "indent": 2,
+      "arrow": true,
+      "wrap": true,
+      "width_cutoff": 150
+    },
+    "styler": {},
+    "formatOnSave": false,
+    "cacheFormatters": false,
+    "astyle": {
+      "args": []
+    },
+    "ruff": {
+      "args": [
+        "--select=I001"
+      ]
+    },
+    "ruffformat": {
+      "args": []
+    },
+    "suppressFormatterErrors": false,
+    "suppressFormatterErrorsIFFAutoFormatOnSave": false
+  }
+}

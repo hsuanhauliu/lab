@@ -3,3 +3,6 @@
 # Note that Dockerfile and .dockerignore will still be read:
 # https://stackoverflow.com/questions/47580298/can-dockerfile-be-put-in-dockerignore
 *
+
+# Whitelisted files
+!/overrides.json

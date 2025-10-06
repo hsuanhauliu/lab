@@ -6,7 +6,7 @@
 FROM cschranz/gpu-jupyter:v1.9_cuda-12.6_ubuntu-24.04
 
 # Update Jupyter notebook version
-RUN pip install --no-cache-dir jupyter==1.1.1
+RUN pip install --no-cache-dir jupyter==1.1.1 jupyterlab==4.4.9
 
 # Install custom packages:
 # 1. computer vision/image processing packages
@@ -21,3 +21,7 @@ RUN pip install --no-cache-dir \
 	diffusers==0.35.1 transformers==4.57.0 huggingface_hub==0.35.3 \
 	lightning==2.5.5 onnxruntime-gpu==1.23.0 \
 	jupyterlab-code-formatter==3.0.2 isort==6.1.0 black==25.9.0 
+
+# Jupyter lab user settings
+# See https://jupyterlab.readthedocs.io/en/latest/user/directories.html#settings
+COPY overrides.json /home/jovyan/.jupyter/lab/user-settings/overrides.json
