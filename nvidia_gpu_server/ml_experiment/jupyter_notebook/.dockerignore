@@ -1,0 +1,5 @@
+# Ignore everything since we don't need any files to build the image.
+# This helps avoid any files (e.g. .DS_Store) to be included in build context.
+# Note that Dockerfile and .dockerignore will still be read:
+# https://stackoverflow.com/questions/47580298/can-dockerfile-be-put-in-dockerignore
+*
