@@ -24,4 +24,4 @@ RUN pip install --no-cache-dir \
 
 # Jupyter lab user settings
 # See https://jupyterlab.readthedocs.io/en/latest/user/directories.html#settings
-COPY overrides.json /home/jovyan/.jupyter/lab/user-settings/overrides.json
+COPY overrides.json /opt/conda/share/jupyter/lab/settings/overrides.json
