@@ -1,6 +1,6 @@
-# ML Notebook
+# Jupyter Notebook
 
-Docker services for ML & CV experiment. Jupyter notebook + Tensorboard.
+Docker service for my ML experiments. Jupyter notebook + Tensorboard.
 
 ```bash
 # start containers
@@ -16,14 +16,6 @@ Ports:
 - 8888: Notebook port.
 - 6006: Tensorboard port.
 
-Directories inside the Jupyter notebook environment:
-
-- `notebooks`: directories for all notebooks.
-- `notebooks/data`: dataset directory.
-- `notebooks/test`: test data.
-- `notebooks/output`: generated files.
-- `logs`: Tensorboard log folder for model training.
-
 Files:
 
 - `jupyter_notebook/Dockerfile`: added some additional packages on top of the gpu-jupyter Dockerfile.
@@ -38,8 +30,7 @@ Files:
 
 When starting tensorboard in the Docker environment, make sure to bind to 0.0.0.0 and expose port.
 
-```
+```python
 %load_ext tensorboard
 %tensorboard --logdir logs --port 6006 --bind_all
 ```
-

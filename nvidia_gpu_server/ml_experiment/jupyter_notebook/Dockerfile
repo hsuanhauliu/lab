@@ -23,7 +23,6 @@ RUN pip install --no-cache-dir \
 RUN pip install --no-cache-dir torchview==0.2.7 \
 	lightning==2.5.5 onnxruntime-gpu==1.23.0
 
-# Jupyter lab user settings
+# Jupyter lab custom user settings
 # See https://jupyterlab.readthedocs.io/en/latest/user/directories.html#settings
 COPY overrides.json /opt/conda/share/jupyter/lab/settings/overrides.json
-
