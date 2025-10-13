@@ -15,12 +15,12 @@ services:
                 - gpu
     ports:
       - 8888:8888 # Jupyter notebook UI
-      - 8889:6006 # Tensorboard UI
+      - 6006:6006 # Tensorboard UI
     volumes:
       # notebooks dir is meant for all files for Jupyter notebook
       - ~/data/experiments/notebooks:/home/jovyan/notebooks
-      # logs dir is meant for Tensorboard logs
-      - ~/data/experiments/logs:/home/jovyan/logs
+      # central logs dir meant for global Tensorboard instance
+      # - ~/data/experiments/logs:/home/jovyan/logs
     environment:
       JUPYTER_ENABLE_LAB: "yes"
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
