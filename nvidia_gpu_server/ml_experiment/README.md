@@ -31,6 +31,7 @@ Files:
 When starting tensorboard in the Docker environment, make sure to bind to 0.0.0.0 and expose port.
 
 ```python
+# in a notebook
 %load_ext tensorboard
 %tensorboard --logdir logs --port 6006 --bind_all
 ```
