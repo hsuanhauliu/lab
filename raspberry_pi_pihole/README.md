@@ -8,6 +8,7 @@ Raspberry Pi device dedicated for running [Pi-hole](https://docs.pi-hole.net/mai
 
 1. Have a Raspberry Pi ready to go. Internet should be connected.
 1. Run `curl -sSL https://install.pi-hole.net | bash` and follow the instructions to set it up.
+1. You should update periodically by running `sudo pihole -up`.
 
 ## Configuration
 
@@ -45,3 +46,4 @@ The default blocklist after installation is probably not enough. Best practice i
 ## Resources
 
 - <https://docs.pi-hole.net/main/post-install/#making-your-network-take-advantage-of-pi-hole>
+- <https://www.crosstalksolutions.com/the-worlds-greatest-pi-hole-and-unbound-tutorial-2023/#Testing_Ad_Blocking>
