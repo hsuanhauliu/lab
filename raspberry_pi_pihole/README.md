@@ -33,7 +33,7 @@ On the Pi-hole device:
 On your internet router:
 
 1. Change DNS settings to point to your Pi-hole device, and remove other DNS servers. This will prevent traffic from being routed to other DNS servers.
-1. You might want to configure IPv6 DNS, or you could consider disabling IPv6 altogether.
+1. You might want to configure IPv6 DNS, or you could consider disabling IPv6 altogether. In my case, I had to set the IPv6 DNS server to Pi-hole (`ip a` on the Pi-hole device to find IPv6).
 
 ## Blocklist
 
